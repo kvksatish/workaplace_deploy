@@ -21,8 +21,7 @@ const LeadSchema = new mongoose.Schema({
         required: true,
     },
     others: {
-        type: String,
-        required: true,
+        type: String
     }
 })
 const LeadModel = mongoose.model("lead", LeadSchema)

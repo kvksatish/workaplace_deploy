@@ -17,8 +17,7 @@ const LeadSchema = new mongoose.Schema({
         required: true,
     },
     type: {
-        type: String,
-        required: true,
+        type: String
     },
     others: {
         type: String

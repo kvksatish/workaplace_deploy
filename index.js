@@ -1,150 +1,152 @@
-const express = require("express")
-var jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const { connection } = require("./Config/db.js")
-const { UserModel } = require("./Models/User")
-const passwordValidator = require('password-validator');
-const validator = require('validator');
-const cors = require('cors');
+const express = require("express");
+var jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const { connection } = require("./Config/db.js");
+const { UserModel } = require("./Models/User");
+const passwordValidator = require("password-validator");
+const validator = require("validator");
+const cors = require("cors");
 const authentication = require("./Middleware/authentication.js");
 const { default: axios } = require("axios");
 const { LeadModel } = require("./Models/Lead.js");
 
-const app = express()
+const app = express();
 
-require("dotenv").config()
-app.use(express.json())
+require("dotenv").config();
+app.use(express.json());
 app.use(cors());
+const path = require("path");
+
+const _dirname = path.dirname("");
+const buildPath = path.join(_dirname, "./build");
+app.use(express.static(buildPath));
 
 app.get("/", (req, res) => {
-    res.send("welcome")
-})
+  res.sendFile(path.join(_dirname, "./build/index.html"), function (err) {
+    if (err) {
+      res.status(500).send(err);
+    }
+  });
+});
 
 app.post("/login", async (req, res) => {
+  //  res.send("wrgnrggnrgngnnnnnyrn")
+  let { email, password } = req.body;
+  let user = await UserModel.findOne({ email });
 
-    //  res.send("wrgnrggnrgngnnnnnyrn")
-    let { email, password } = req.body
-    let user = await UserModel.findOne({ email })
-
-    console.log(user)
-    let hash = user.password
-    bcrypt.compare(password, hash, function (err, result) {
-
-        if (result) {
-            var token = jwt.sign({ email: email }, 'secret');
-            console.log(token)
-            res.send({ "msg": "Login success", "token": token })
-
-        }
-
-        else {
-            res.send("Login Failed")
-        }
-
-    })
-})
+  console.log(user);
+  let hash = user.password;
+  bcrypt.compare(password, hash, function (err, result) {
+    if (result) {
+      var token = jwt.sign({ email: email }, "secret");
+      console.log(token);
+      res.send({ msg: "Login success", token: token });
+    } else {
+      res.send("Login Failed");
+    }
+  });
+});
 
 const passwordSchema = new passwordValidator();
 
 // Define the password criteria
 passwordSchema
-    .is().min(8) // Minimum length of 8 characters
-    .has().uppercase() // Must have at least one uppercase letter
-    .has().lowercase() // Must have at least one lowercase letter
-    .has().digits() // Must have at least one digit
-    .has().symbols() // Must have at least one symbol
-    .has().not().spaces(); // Must not contain spaces
+  .is()
+  .min(8) // Minimum length of 8 characters
+  .has()
+  .uppercase() // Must have at least one uppercase letter
+  .has()
+  .lowercase() // Must have at least one lowercase letter
+  .has()
+  .digits() // Must have at least one digit
+  .has()
+  .symbols() // Must have at least one symbol
+  .has()
+  .not()
+  .spaces(); // Must not contain spaces
 
 app.post("/signup", async (req, res) => {
-    console.log(req.body)
-    let { username, email, password } = req.body
+  console.log(req.body);
+  let { username, email, password } = req.body;
 
-    // Validate the email
-    if (!validator.isEmail(email)) {
-        return res.status(400).send("Invalid email address");
-    }
+  // Validate the email
+  if (!validator.isEmail(email)) {
+    return res.status(400).send("Invalid email address");
+  }
 
-    // Validate the password
-    if (!passwordSchema.validate(password)) {
-        return res.status(400).send("Invalid password. Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one digit, one symbol, and no spaces.");
-    }
+  // Validate the password
+  if (!passwordSchema.validate(password)) {
+    return res
+      .status(400)
+      .send(
+        "Invalid password. Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one digit, one symbol, and no spaces."
+      );
+  }
 
-    try {
-        // Hash the password
-        const hash = await bcrypt.hash(password, 6);
+  try {
+    // Hash the password
+    const hash = await bcrypt.hash(password, 6);
 
-        // Create a new user with the hashed password
-        const user = new UserModel({ username, email, password: hash });
+    // Create a new user with the hashed password
+    const user = new UserModel({ username, email, password: hash });
 
-        // Save the user to the database
-        await user.save();
+    // Save the user to the database
+    await user.save();
 
-        res.send("Signup Successful");
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Something went wrong or invalid or used credentials. Please try again later.");
-    }
+    res.send("Signup Successful");
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .send(
+        "Something went wrong or invalid or used credentials. Please try again later."
+      );
+  }
 });
 
 app.post("/addlead", async (req, res) => {
-    let {name,
-        comapanyname,
-        workemail,
-        phonenumber,
-        type,
-        others} = req.body
-        
-        console.log(name,
-            comapanyname,
-            workemail,
-            phonenumber,
-            type,
-            others)
-    try {
-      
-        const lead = new LeadModel({name,
-            comapanyname,
-            workemail,
-            phonenumber,
-            type,
-            others});
-        // Save the user to the database
-        await lead.save();
-        res.send("Successfully Saved");
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Something went wrong. Please try again later.");
-    }
+  let { name, comapanyname, workemail, phonenumber, type, others } = req.body;
+
+  console.log(name, comapanyname, workemail, phonenumber, type, others);
+  try {
+    const lead = new LeadModel({
+      name,
+      comapanyname,
+      workemail,
+      phonenumber,
+      type,
+      others,
+    });
+    // Save the user to the database
+    await lead.save();
+    res.send("Successfully Saved");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Something went wrong. Please try again later.");
+  }
 });
-
-
 
 app.get("/dashboard", authentication, async (req, res) => {
-    // console.log(req.query)
-    try {
-      
-        let ressultdata = await LeadModel.find({})
-        res.send(ressultdata)
-
-    } catch (err) {///
-        ////
-        res.status(500).send("Error retrieving data from API.");
-    }////
-
-
+  // console.log(req.query)
+  try {
+    let ressultdata = await LeadModel.find({});
+    res.send(ressultdata);
+  } catch (err) {
+    ///
+    ////
+    res.status(500).send("Error retrieving data from API.");
+  } ////
 });
 
-
 app.listen(7500, async () => {
-    try {
-        await connection
-        console.log("connected")
-    }
-    catch (err) {
-        console.log("not connected")
-        console.log(err)
-    }
-    console.log("linstening to port 7500")
-    // console.log(process.env.NAME)
-    //console.log(process.env.MONGO_URL)
-})
+  try {
+    await connection;
+    console.log("connected");
+  } catch (err) {
+    console.log("not connected");
+    console.log(err);
+  }
+  console.log("linstening to port 7500");
+  // console.log(process.env.NAME)
+  //console.log(process.env.MONGO_URL)
+});

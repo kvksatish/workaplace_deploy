@@ -21,15 +21,7 @@ const _dirname = path.dirname("");
 const buildPath = path.join(_dirname, "./build");
 app.use(express.static(buildPath));
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(_dirname, "./build/index.html"), function (err) {
-    if (err) {
-      res.status(500).send(err);
-    }
-  });
-});
-
-app.post("/login", async (req, res) => {
+app.post("/app/login", async (req, res) => {
   //  res.send("wrgnrggnrgngnnnnnyrn")
   let { email, password } = req.body;
   let user = await UserModel.findOne({ email });
@@ -65,7 +57,7 @@ passwordSchema
   .not()
   .spaces(); // Must not contain spaces
 
-app.post("/signup", async (req, res) => {
+app.post("/app/signup", async (req, res) => {
   console.log(req.body);
   let { username, email, password } = req.body;
 
@@ -104,7 +96,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.post("/addlead", async (req, res) => {
+app.post("/app/addlead", async (req, res) => {
   let { name, comapanyname, workemail, phonenumber, type, others } = req.body;
 
   console.log(name, comapanyname, workemail, phonenumber, type, others);
@@ -126,7 +118,7 @@ app.post("/addlead", async (req, res) => {
   }
 });
 
-app.get("/dashboard", authentication, async (req, res) => {
+app.get("/app/dashboard", authentication, async (req, res) => {
   // console.log(req.query)
   try {
     let ressultdata = await LeadModel.find({});
@@ -136,6 +128,14 @@ app.get("/dashboard", authentication, async (req, res) => {
     ////
     res.status(500).send("Error retrieving data from API.");
   } ////
+});
+
+app.use("/", (req, res) => {
+  res.sendFile(path.join(_dirname, "./build/index.html"), function (err) {
+    if (err) {
+      res.status(500).send(err);
+    }
+  });
 });
 
 app.listen(7500, async () => {
